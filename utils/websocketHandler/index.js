@@ -29,7 +29,7 @@ async function saveToKotlin(docId, doc) {
   }
 }
 
-const handleConnection = async (conn, req, docId, token) => {
+const handleConnection = async (conn, req, docId, token, role) => {
   conn.binaryType = 'arraybuffer';
 
   let doc = docs.get(docId);
@@ -61,12 +61,21 @@ const handleConnection = async (conn, req, docId, token) => {
   conn.on('message', (message) => {
     const decoder = decoding.createDecoder(new Uint8Array(message));
     const messageType = decoding.readVarUint(decoder);
-    const encoder = encoding.createEncoder();
 
     switch (messageType) {
-      case 0: // sync
+      case 0:
+        const encoder = encoding.createEncoder();
         encoding.writeVarUint(encoder, 0);
-        sync.readSyncMessage(decoder, encoder, doc, conn);
+
+        if (role === 2) {
+          sync.readSyncMessage(decoder, encoder, doc, {
+            // 伪造一个不具备写入权限的 context
+            readonly: true
+          });
+        } else {
+          sync.readSyncMessage(decoder, encoder, doc, conn);
+        }
+
         if (encoding.length(encoder) > 1) {
           conn.send(encoding.toUint8Array(encoder));
         }
