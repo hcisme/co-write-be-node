@@ -2,9 +2,44 @@ const fs = require('fs');
 const path = require('path');
 const http = require('http');
 const WebSocket = require('ws');
-const { internalRequest, handleConnection } = require('./utils');
+const { internalRequest, handleConnection, docs } = require('./utils');
 
-const server = http.createServer();
+const server = http.createServer(async (req, res) => {
+  if (req.headers['internal-secret'] !== 'd0424d61-d3cf-4f67-84ff-a76fe42e5a49') {
+    res.writeHead(403);
+    res.end();
+    return;
+  }
+
+  if (req.url === '/internal/sync-permission' && req.method === 'POST') {
+    let body = '';
+    req.on('data', (chunk) => (body += chunk));
+    req.on('end', () => {
+      const { docId, userId, role, action } = JSON.parse(body);
+
+      // 查找对应文档的活跃连接
+      const doc = docs.get(docId);
+      if (doc) {
+        doc.conns.forEach((_, conn) => {
+          // 在连接时把 userId 存到 conn 里是个好习惯
+          if (conn.userId === userId) {
+            if (action === 'DELETE') {
+              // 踢出用户
+              conn.send(JSON.stringify({ type: 'AUTH_REVOKED' }));
+              conn.close(1000);
+            } else {
+              // 更新权限
+              conn.role = role;
+              conn.send(JSON.stringify({ type: 'ROLE_UPDATED', role: role }));
+            }
+          }
+        });
+      }
+      res.writeHead(200);
+      res.end('ok');
+    });
+  }
+});
 const wss = new WebSocket.Server({ server });
 
 wss.on('connection', async (conn, req) => {
@@ -23,7 +58,7 @@ wss.on('connection', async (conn, req) => {
     if (authRes.data.code === 200) {
       const role = authRes.data.data.role;
       console.log(`用户已授权进入文档: ${docId}`);
-      handleConnection(conn, req, docId, token, role);
+      handleConnection(conn, req, docId, token, role, userId);
     } else {
       console.warn('鉴权失败');
       conn.close(1008, 'Unauthorized');

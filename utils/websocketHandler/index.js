@@ -29,7 +29,10 @@ async function saveToKotlin(docId, doc) {
   }
 }
 
-const handleConnection = async (conn, req, docId, token, role) => {
+const handleConnection = async (conn, req, docId, token, role, userId) => {
+  conn.userId = userId;
+  conn.docId = docId;
+  conn.role = role;
   conn.binaryType = 'arraybuffer';
 
   let doc = docs.get(docId);
@@ -142,4 +145,4 @@ setInterval(
   1000 * 60 * 1
 );
 
-module.exports = { handleConnection };
+module.exports = { handleConnection, docs };

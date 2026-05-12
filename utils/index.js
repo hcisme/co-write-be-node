@@ -1,7 +1,8 @@
 const { internalRequest } = require('./internalRequest');
-const { handleConnection } = require('./websocketHandler');
+const { handleConnection, docs } = require('./websocketHandler');
 
 module.exports = {
   internalRequest,
-  handleConnection
+  handleConnection,
+  docs
 };
