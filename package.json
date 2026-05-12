@@ -4,7 +4,8 @@
   "description": "",
   "main": "app.js",
   "scripts": {
-    "start": "nodemon app.js"
+    "dev": "cross-env NODE_ENV=development nodemon ./src/app.js",
+    "prod": "cross-env NODE_ENV=production nodemon ./src/app.js"
   },
   "keywords": [],
   "author": "",
@@ -12,6 +13,8 @@
   "type": "commonjs",
   "dependencies": {
     "axios": "^1.16.0",
+    "cross-env": "^10.1.0",
+    "dotenv": "^17.4.2",
     "lib0": "^0.2.117",
     "ws": "^8.20.0",
     "y-protocols": "^1.0.7",

@@ -57,7 +57,6 @@ const handleConnection = async (conn, req, docId, token, role, userId) => {
     }
     docs.set(docId, doc);
   }
-
   doc.conns.set(conn, new Set());
 
   // 消息处理逻辑保持不变...
@@ -125,6 +124,17 @@ const handleConnection = async (conn, req, docId, token, role, userId) => {
       }, 10000);
     }
   });
+
+  const awarenessStates = doc.awareness.getStates();
+  if (awarenessStates.size > 0) {
+    const encoder = encoding.createEncoder();
+    encoding.writeVarUint(encoder, 1);
+    encoding.writeVarUint8Array(
+      encoder,
+      awareness.encodeAwarenessUpdate(doc.awareness, Array.from(awarenessStates.keys()))
+    );
+    conn.send(encoding.toUint8Array(encoder));
+  }
 
   // Sync Step 1
   const encoder = encoding.createEncoder();

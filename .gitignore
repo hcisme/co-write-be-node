@@ -38,3 +38,6 @@ coverage/
 
 temp/
 dist/
+
+.env.development
+.env.production

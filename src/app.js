@@ -1,11 +1,10 @@
-const fs = require('fs');
-const path = require('path');
 const http = require('http');
 const WebSocket = require('ws');
 const { internalRequest, handleConnection, docs } = require('./utils');
+const { internalSecret, port } = require('./config');
 
 const server = http.createServer(async (req, res) => {
-  if (req.headers['internal-secret'] !== 'd0424d61-d3cf-4f67-84ff-a76fe42e5a49') {
+  if (req.headers['internal-secret'] !== internalSecret) {
     res.writeHead(403);
     res.end();
     return;
@@ -17,11 +16,9 @@ const server = http.createServer(async (req, res) => {
     req.on('end', () => {
       const { docId, userId, role, action } = JSON.parse(body);
 
-      // 查找对应文档的活跃连接
       const doc = docs.get(docId);
       if (doc) {
         doc.conns.forEach((_, conn) => {
-          // 在连接时把 userId 存到 conn 里是个好习惯
           if (conn.userId === userId) {
             if (action === 'DELETE') {
               // 踢出用户
@@ -69,4 +66,4 @@ wss.on('connection', async (conn, req) => {
   }
 });
 
-server.listen(3000, () => console.log('Node.js Server at 3000'));
+server.listen(port, () => console.log(`Node.js Server at ${port}`));
